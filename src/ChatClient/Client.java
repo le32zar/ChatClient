@@ -12,19 +12,30 @@ public class Client {
     private Socket _socket;
     private ObjectInputStream _in;
     private ObjectOutputStream _out;
-    private InputThread _userInput;
-
+    
+    public ChatFrame ChatFrame;
     public String ClientName;
     public boolean IsActive;
+    public boolean IsLoggedin;
     public String ServerHost;
     public int ServerPort;
+    public String Password;
+    public String Username;
+    public String RoomName;
+    public Map<String, List<String>> RoomMap;
+    
 
-    public Client(String serverHost, int serverPort)  {
+    
+    public Client(String serverHost, int serverPort, String password, String username, ChatFrame cF)  {
+        
         ClientName = "default";
         IsActive = true;
         ServerHost = serverHost;
         ServerPort = serverPort;
-        
+        Password = password;
+        Username = username;      
+        ChatFrame= cF;
+        RoomMap = new HashMap<String, List<String>>();
         try {
             _socket = new Socket(ServerHost, ServerPort);
             _in = new ObjectInputStream(_socket.getInputStream());
@@ -37,28 +48,102 @@ public class Client {
 
     public void start() {
         try {
-            if(!connect()) {
+            if(!IsLoggedin) {
                 closeInternal();
                 return;
             }
-            _userInput.start();
             
             while(IsActive) {                
                 Message msg = (Message)_in.readObject();
-                printMessage(msg);
                 
-                if(msg.Type == MessageType.INTERNAL) {
-                    if(msg.Text[0].equals("CONNECTION_CLOSED")) {
-                        Message receivedMsg = new Message(MessageType.RECEIVED, null, null, "");
-                        sendMessage(receivedMsg);
-                        
-                        closeInternal();
-                    }
+                
+                if(msg.Type==MessageType.INTERNAL) {
+                    handleInternalMessage(msg);
+                  
                 }
+                if(msg.Type== MessageType.ROOM){
+                    outputMessage(msg);
+                }
+              
             }
         } catch (Exception ex) {
             System.out.println("<Client>Exception while waiting for incoming messages: " + ex.getMessage());
         }
+    }
+    
+    private void outputMessage(Message msg){
+        String logText = ChatFrame.getTime(false) +" "+msg.Sender+": "+msg.Text[1];
+        ChatFrame.updateArea(logText); 
+    }
+    
+    private void handleInternalMessage(Message msg) {
+        switch(msg.Text[0]){
+            case "CLIENT_CONNECTED":
+               break;
+            case "CLIENT_DISCONNECTED":
+                break;
+            case "ROOM_ADDED": 
+                List<String> emptyList= new ArrayList<>();
+                RoomMap.put(msg.Text[1],emptyList);
+                break;
+            case "ROOM_RENAMED":
+                List<String> list = RoomMap.get(msg.Text[1]);
+                RoomMap.remove(msg.Text[1]);
+                RoomMap.put(msg.Text[2], list);
+                ChatFrame.updateRooms();
+                break;
+            case "ROOM_REMOVED":
+                RoomMap.remove(msg.Text[1]);
+            case "CLIENT_ROOM_CHANGED":
+                    RoomMap.get(msg.Text[2]).remove(msg.Text[1]);
+                    RoomMap.get(msg.Text[3]).add(msg.Text[1]);
+                    ChatFrame.updateRooms();
+                break;
+            case "CLOSE_CONNECTION":
+                Message recievedMsg = new Message(MessageType.RECEIVED, null, null, "");
+                try {
+                    sendMessage(recievedMsg);
+                    closeInternal();
+                } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                break;
+            case "REPLY_CHANGE_ROOM":
+                if(msg.Text[1].equals("true")){
+                RoomName= msg.Text[3];
+                ChatFrame.updateChatRoom();
+                ChatFrame.updatePeople();
+                ChatFrame.clearArea();
+                }
+                else ChatFrame.errorMsg();
+                
+                break;
+            case "REPLY_STATUSLIST":
+        
+            try {
+                //HashMap <String, String[]> statusMap = (HashMap<String, String[]>)_in.readObject();
+                convertMap((HashMap<String, String[]>)_in.readObject());
+                ChatFrame.updateRooms();
+            } catch (IOException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            
+                break;
+        }
+    }
+
+    public Map<String, List<String>> convertMap(HashMap<String, String[]> inMap){
+        Map<String, List<String>> map= new HashMap<>();
+        
+        for(String key : inMap.keySet()){
+            String[] peopleArray =inMap.get(key); 
+            List<String> list= Arrays.asList(peopleArray);
+            map.put(key, list);
+        }
+        RoomMap= map;
+        return map;
     }
     
     public void sendMessage(Message msg) throws IOException {
@@ -76,44 +161,54 @@ public class Client {
     private void closeInternal() throws IOException {
         IsActive = false;
         
-        InputThread.currentThread().interrupt();
         _in.close();
         _out.close();
         _socket.close();
     } 
     
-    private void printMessage(Message msg) {
-        System.out.println("[" + msg.Sender + "] " + msg.Text[0]);
-        
-        for(Integer i = 1; i < msg.Text.length; i++) {
-            System.out.println(msg.Text[i]);
-        }
-    }
-
-    private boolean connect() throws Exception {
+    public boolean connect() {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            System.out.print("<Client>Username: ");
-            String name = reader.readLine();
-            System.out.print("<Client>Password: ");
-            String password = reader.readLine();
+            String name = Username;
+            String password = Password;
             
-            Message credentialMsg = new Message(MessageType.LOGIN_ATTEMPT, "newClient", "server", new String[] {name, password});           
+            Message credentialMsg = new Message(MessageType.LOGIN_REQUEST, "newClient", "server", new String[] {name, password});           
             sendMessage(credentialMsg);
             ClientName = name;
         
             Message replyMsg = (Message)_in.readObject();
             if(replyMsg.Text[0].equals("ACCEPTED")) {
-                _userInput = new InputThread(this, reader);
+                IsLoggedin =true;
+                Message msg= new Message(MessageType.INTERNAL, Username,"server","REQUEST_STATUSLIST");
+                sendMessage(msg);
+
+                ChatFrame.updateRooms();
                 return true;
-            } else {
+            }
+            else if (replyMsg.Text[0].equals("ACCEPTED_NEW")) {
+                IsLoggedin =true;
+                Message msg= new Message(MessageType.INTERNAL, Username,"server","REQUEST_STATUSLIST");
+                sendMessage(msg);
+                
+                ChatFrame.updateRooms();
+                return true;
+            } 
+            else if (replyMsg.Text[0].equals("WRONG_CREDENTIALS"))  {
+                IsLoggedin =false;
                 reader.close();
                 return false;
             }
-        } catch(IOException ex) {
+            else if (replyMsg.Text[0].equals("ALREADY_CONNECTED"))  {
+                IsLoggedin =false;
+                reader.close();
+                return false;
+            }
+            
+        } catch(ClassNotFoundException | IOException ex) {
             System.out.println("<Client>Exception while trying to connect to server: " + ex.getMessage());
         }  
         return false;
     }
 
+   
 }
