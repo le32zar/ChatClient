@@ -41,7 +41,6 @@ public class LoginDialog extends javax.swing.JDialog {
         usernameField = new javax.swing.JTextField();
         passwordField = new javax.swing.JTextField();
         loginButton = new javax.swing.JToggleButton();
-        registerButton = new javax.swing.JToggleButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -62,13 +61,6 @@ public class LoginDialog extends javax.swing.JDialog {
             }
         });
 
-        registerButton.setText("Register");
-        registerButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                registerButtonActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -84,9 +76,7 @@ public class LoginDialog extends javax.swing.JDialog {
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(usernameField, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE)
                             .addComponent(passwordField)))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(loginButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(registerButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addComponent(loginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(45, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -102,9 +92,7 @@ public class LoginDialog extends javax.swing.JDialog {
                     .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(28, 28, 28)
                 .addComponent(loginButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(registerButton)
-                .addContainerGap(87, Short.MAX_VALUE))
+                .addContainerGap(128, Short.MAX_VALUE))
         );
 
         pack();
@@ -118,17 +106,17 @@ public class LoginDialog extends javax.swing.JDialog {
         // TODO add your handling co
         String password = passwordField.getText();
         String username= usernameField.getText();
-        client = new Client("localhost", 1501, password, username, chatFrame);
+        client = new Client("localhost", 1501, chatFrame);
         chatFrame.client= client;
+        
         if(client.IsActive) {
-            client.connect();
+            client.connect(username, password);
             
-            System.out.println(client.IsLoggedin);
             if(client.IsLoggedin){
                 Runnable startClient = () -> {
-                client.start();
-            };
-            new Thread(startClient).start();
+                    client.start();
+                };
+                new Thread(startClient).start();
             
                this.setVisible(false);
                JOptionPane.showMessageDialog(null, "You have loggedin as " + username, "Login Successful",JOptionPane.INFORMATION_MESSAGE);
@@ -145,35 +133,6 @@ public class LoginDialog extends javax.swing.JDialog {
          passwordField.setText("");
          usernameField.setText("");
     }//GEN-LAST:event_loginButtonActionPerformed
-
-    private void registerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerButtonActionPerformed
-        String password = passwordField.getText();
-        String username= usernameField.getText();
-        client = new Client("localhost", 1501, password, username, chatFrame);
-        chatFrame.client= client;
-        if(client.IsActive) {
-            client.connect();
-            if(client.IsLoggedin){
-                   Runnable startClient = () -> {
-                client.start();
-            };
-            new Thread(startClient).start();
-               this.setVisible(false);
-               JOptionPane.showMessageDialog(null, "You have registered as " + username, "Registration Successful",JOptionPane.INFORMATION_MESSAGE);
-                
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Try Agian! ", "Login Failed",JOptionPane.ERROR_MESSAGE);
-            }
-           
-        } 
-        else{
-            JOptionPane.showMessageDialog(null, "Server is not responding \nTry agian later! ", "Broken Server",JOptionPane.ERROR_MESSAGE);
-        }
-         passwordField.setText("");
-         usernameField.setText("");
-    
-    }//GEN-LAST:event_registerButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -222,7 +181,6 @@ public class LoginDialog extends javax.swing.JDialog {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JToggleButton loginButton;
     private javax.swing.JTextField passwordField;
-    private javax.swing.JToggleButton registerButton;
     private javax.swing.JTextField usernameField;
     // End of variables declaration//GEN-END:variables
 }
