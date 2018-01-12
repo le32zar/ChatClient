@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 public class Client {
     private Socket _socket;
@@ -114,11 +115,14 @@ public class Client {
                 ChatFrame.updateList();
                 break;
             case "CLOSE_CONNECTION":
-                Message recievedMsg = new Message(MessageType.RECEIVED, ClientName, "server", "");
                 try {
+                    Message recievedMsg = new Message(MessageType.RECEIVED, ClientName, "server", "");
                     sendMessage(recievedMsg);
-                    
                     closeInternal();
+                    
+                    JOptionPane.showMessageDialog(null, "Connection with server closed.\nClient will exit now.", "Connection closed", JOptionPane.INFORMATION_MESSAGE);
+                    
+                    System.exit(0);
                 } catch (IOException ex) {
                     Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
                 }
