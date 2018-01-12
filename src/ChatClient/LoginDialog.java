@@ -2,6 +2,7 @@ package ChatClient;
 
 import java.awt.event.WindowEvent;
 import javax.swing.JOptionPane;
+import javax.swing.SpinnerNumberModel;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -18,13 +19,18 @@ public class LoginDialog extends javax.swing.JDialog {
     /**
      * Creates new form LoginDialog
      */
-    public Client client;
-    public ChatFrame chatFrame;
+    public ChatFrame ChatFrame;
+    
+    private SpinnerNumberModel spinnerPortModel;
     
     public LoginDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-        chatFrame=(ChatFrame) parent;
+        ChatFrame =(ChatFrame) parent;
+        
+        spinnerPortModel = new SpinnerNumberModel(1501, 0, 999999, 1);
+        spinnerPort.setModel(spinnerPortModel);
+        textFieldIP.setText("localhost");
     }
 
     /**
@@ -40,24 +46,32 @@ public class LoginDialog extends javax.swing.JDialog {
         jLabel2 = new javax.swing.JLabel();
         usernameField = new javax.swing.JTextField();
         passwordField = new javax.swing.JTextField();
-        loginButton = new javax.swing.JToggleButton();
+        jLabel3 = new javax.swing.JLabel();
+        textFieldIP = new javax.swing.JTextField();
+        jLabel4 = new javax.swing.JLabel();
+        spinnerPort = new javax.swing.JSpinner();
+        buttonLogin = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle("Login");
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                formWindowClosing(evt);
+            }
+        });
 
         jLabel1.setText("Username:");
 
         jLabel2.setText("Password:");
 
-        usernameField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                usernameFieldActionPerformed(evt);
-            }
-        });
+        jLabel3.setText("Server IP:");
 
-        loginButton.setText("Login");
-        loginButton.addActionListener(new java.awt.event.ActionListener() {
+        jLabel4.setText("Port:");
+
+        buttonLogin.setText("Login");
+        buttonLogin.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                loginButtonActionPerformed(evt);
+                buttonLoginActionPerformed(evt);
             }
         });
 
@@ -65,74 +79,97 @@ public class LoginDialog extends javax.swing.JDialog {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(29, 29, 29)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(buttonLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel1))
+                        .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2))
-                        .addGap(43, 43, 43)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(usernameField, javax.swing.GroupLayout.DEFAULT_SIZE, 217, Short.MAX_VALUE)
+                            .addComponent(usernameField)
                             .addComponent(passwordField)))
-                    .addComponent(loginButton, javax.swing.GroupLayout.PREFERRED_SIZE, 95, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(45, Short.MAX_VALUE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel3))
+                        .addGap(21, 21, 21)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(spinnerPort, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 204, Short.MAX_VALUE))
+                            .addComponent(textFieldIP))))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(47, 47, 47)
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel3)
+                    .addComponent(textFieldIP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel4)
+                    .addComponent(spinnerPort, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel1)
                     .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(16, 16, 16)
+                .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(28, 28, 28)
-                .addComponent(loginButton)
-                .addContainerGap(128, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(buttonLogin, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void usernameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_usernameFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_usernameFieldActionPerformed
-
-    private void loginButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginButtonActionPerformed
-        // TODO add your handling co
-        String password = passwordField.getText();
-        String username= usernameField.getText();
-        client = new Client("localhost", 1501, chatFrame);
-        chatFrame.client= client;
-        
-        if(client.IsActive) {
-            client.connect(username, password);
-            
-            if(client.IsLoggedin){
-                Runnable startClient = () -> {
-                    client.start();
-                };
-                new Thread(startClient).start();
-            
-               this.setVisible(false);
-               JOptionPane.showMessageDialog(null, "You have loggedin as " + username, "Login Successful",JOptionPane.INFORMATION_MESSAGE);
-                
-            }
-            else{
-                JOptionPane.showMessageDialog(null, "Try Agian! ", "Login Failed",JOptionPane.ERROR_MESSAGE);
-            }
-           
-        } 
-        else{
-            JOptionPane.showMessageDialog(null, "Server is not responding \nTry agian later! ", "Broken Server",JOptionPane.ERROR_MESSAGE);
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
+        if(ChatFrame.clientInstance == null || !ChatFrame.clientInstance.IsActive) {
+            System.exit(0);
         }
-         passwordField.setText("");
-         usernameField.setText("");
-    }//GEN-LAST:event_loginButtonActionPerformed
+    }//GEN-LAST:event_formWindowClosing
+
+    private void buttonLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonLoginActionPerformed
+        String password = passwordField.getText();
+        String username = usernameField.getText();
+        
+        if(username.equals("") || password.equals("")) {
+            JOptionPane.showMessageDialog(null, "Username or password can't be empty", "Enter Credentials",JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        Client client = new Client(textFieldIP.getText(), (int)spinnerPortModel.getNumber(), ChatFrame);
+        ChatFrame.clientInstance = client;
+        
+        if(!client.IsActive) return;
+        
+        client.connect(username, password);
+
+        if(client.IsLoggedin){
+            Runnable startClient = () -> {
+                client.start();
+            };
+            new Thread(startClient).start();
+
+            this.setVisible(false);
+            JOptionPane.showMessageDialog(null, "You have logged in as " + username, "Login Successful",JOptionPane.INFORMATION_MESSAGE);
+        }
+        else{
+            JOptionPane.showMessageDialog(null, "Couldn't log in!", "Login Failed",JOptionPane.ERROR_MESSAGE);
+        }
+        
+        passwordField.setText("");
+        usernameField.setText("");
+    }//GEN-LAST:event_buttonLoginActionPerformed
 
     /**
      * @param args the command line arguments
@@ -177,10 +214,14 @@ public class LoginDialog extends javax.swing.JDialog {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton buttonLogin;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JToggleButton loginButton;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
     private javax.swing.JTextField passwordField;
+    private javax.swing.JSpinner spinnerPort;
+    private javax.swing.JTextField textFieldIP;
     private javax.swing.JTextField usernameField;
     // End of variables declaration//GEN-END:variables
 }

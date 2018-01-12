@@ -2,6 +2,7 @@ package ChatClient;
 
 import ChatServer.Message;
 import ChatServer.MessageType;
+import java.awt.event.WindowEvent;
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -20,10 +21,8 @@ public class Client {
     public String ServerHost;
     public int ServerPort;
     public String RoomName;
-    public Map<String, List<String>> RoomMap;
-    
-
-    
+    public Map<String, ArrayList<String>> RoomMap;
+        
     public Client(String serverHost, int serverPort, ChatFrame chatFrame)  {
         
         RoomName = "Default";
@@ -31,7 +30,7 @@ public class Client {
         ServerHost = serverHost;
         ServerPort = serverPort;
         ChatFrame= chatFrame;
-        RoomMap = new HashMap<String, List<String>>();
+        RoomMap = new HashMap<>();
         
         try {
             _socket = new Socket(ServerHost, ServerPort);
@@ -39,7 +38,7 @@ public class Client {
             _out = new ObjectOutputStream(_socket.getOutputStream());
         } catch (IOException ex) {
             IsActive = false;
-            System.out.println("<Client>Failed to connect to server: " + ex.getMessage());
+            ChatFrame.errorMsg("Failed to connect to server: " + ex.getMessage());
         }
     }
 
@@ -53,34 +52,35 @@ public class Client {
             while(IsActive) {                
                 Message msg = (Message)_in.readObject();
                 
-                
-                if(msg.Type==MessageType.INTERNAL) {
-                    handleInternalMessage(msg);
+                if(null != msg.Type) switch (msg.Type) {
+                    case INTERNAL:
+                        handleInternalMessage(msg);
+                        break;
+                    case ROOM:
+                        printMessage(msg);
+                        break;
+                    case PRIVATE:
+                        printMessage(msg);
+                        break;
+                    default:
+                        break;
                 }
-                if(msg.Type== MessageType.ROOM){
-                    printMessage(msg);
-                }
-              
             }
+        } catch (IOException | ClassNotFoundException ex) {
+            ChatFrame.errorMsg("Exception while waiting for incoming messages: " + ex.getMessage());
+            ChatFrame.dispatchEvent(new WindowEvent(ChatFrame, WindowEvent.WINDOW_CLOSING));
         }
-        catch (ClassNotFoundException | IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-//        } catch (Exception ex) {
-//            ChatFrame.errorMsg("Exception while waiting for incoming messages: " + ex.getMessage());
-//        }
     }
     
-    private void printMessage(Message msg){
-        String logText = ChatFrame.getTime(false) +" "+msg.Sender+": "+msg.Text[1];
-        ChatFrame.updateChatArea(logText); 
+    public void printMessage(Message msg){
+        String logText = String.format("[%s]%s: %s", ChatFrame.getTime(false), msg.Sender, msg.Text[0]);
+        ChatFrame.printChatArea(logText); 
     }
     
     private void handleInternalMessage(Message msg) {
         switch(msg.Text[0]){
             case "CLIENT_CONNECTED":
                 RoomMap.get("Default").add(msg.Text[1]);
-                System.out.println("Name: " + msg.Text[1]);
                 
                 ChatFrame.updateList();
                break;
@@ -95,16 +95,15 @@ public class Client {
                 ChatFrame.updateList();
                 break;
             case "ROOM_RENAMED":
-                List<String> list = RoomMap.get(msg.Text[1]);
+                ArrayList<String> list = RoomMap.get(msg.Text[1]);
                 RoomMap.remove(msg.Text[1]);
                 RoomMap.put(msg.Text[2], list);
                 
+                if(RoomName.equals(msg.Text[1])) RoomName = msg.Text[2];
                 ChatFrame.updateList();
                 break;
             case "ROOM_REMOVED":
-                List<String> peopleList = RoomMap.get(msg.Text[1]);
                 RoomMap.remove(msg.Text[1]);
-                RoomMap.get("Default").addAll(peopleList);
                 
                 ChatFrame.updateList();
                 break;
@@ -118,6 +117,7 @@ public class Client {
                 Message recievedMsg = new Message(MessageType.RECEIVED, ClientName, "server", "");
                 try {
                     sendMessage(recievedMsg);
+                    
                     closeInternal();
                 } catch (IOException ex) {
                     Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -130,7 +130,6 @@ public class Client {
                     RoomMap.get(msg.Text[2]).remove(ClientName);
                     RoomMap.get(msg.Text[3]).add(ClientName);
                     
-                    ChatFrame.updateRoomName();
                     ChatFrame.clearArea();
                     ChatFrame.updateList();
                 }
@@ -148,11 +147,11 @@ public class Client {
         }
     }
 
-    public Map<String, List<String>> convertMap(HashMap<String, String[]> inMap){
-        Map<String, List<String>> map= new HashMap<>();
+    public Map<String, ArrayList<String>> convertMap(HashMap<String, String[]> inMap){
+        Map<String, ArrayList<String>> map = new HashMap<>();
         
         for(String key : inMap.keySet()){
-            String[] peopleArray =inMap.get(key); 
+            String[] peopleArray = inMap.get(key); 
             ArrayList<String> list = new ArrayList<>();
             
             for(String user : inMap.get(key)) {
@@ -161,7 +160,6 @@ public class Client {
             
             map.put(key, list);
         }
-        RoomMap= map;
         return map;
     }
     
@@ -197,7 +195,7 @@ public class Client {
                 //RoomMap.put("Default", new ArrayList<>());
                 //RoomMap.get("Default").add(name);
                 
-                Message msg= new Message(MessageType.INTERNAL, name, "server","REQUEST_STATUSLIST");
+                Message msg = new Message(MessageType.INTERNAL, name, "server","REQUEST_STATUSLIST");
                 sendMessage(msg);
                 return true;
             }
@@ -206,21 +204,21 @@ public class Client {
                 //RoomMap.put("Default", new ArrayList<>());
                 //RoomMap.get("Default").add(name);
                 
-                Message msg= new Message(MessageType.INTERNAL, name, "server","REQUEST_STATUSLIST");
+                Message msg = new Message(MessageType.INTERNAL, name, "server","REQUEST_STATUSLIST");
                 sendMessage(msg);
                 return true;
             } 
             else if (replyMsg.Text[0].equals("WRONG_CREDENTIALS"))  {
-                IsLoggedin =false;
+                IsLoggedin = false;
                 return false;
             }
             else if (replyMsg.Text[0].equals("ALREADY_CONNECTED"))  {
-                IsLoggedin =false;
+                IsLoggedin = false;
                 return false;
             }
             
         } catch(ClassNotFoundException | IOException ex) {
-            System.out.println("<Client>Exception while trying to connect to server: " + ex.getMessage());
+            ChatFrame.errorMsg("Exception while trying to connect to server: " + ex.getMessage());
         }  
         return false;
     }
