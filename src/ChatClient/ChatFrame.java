@@ -98,6 +98,7 @@ public class ChatFrame extends javax.swing.JFrame {
         buttonSendMessage = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
                 formWindowClosing(evt);
@@ -133,7 +134,7 @@ public class ChatFrame extends javax.swing.JFrame {
         jLabel2.setText("Rooms:");
 
         jLabel3.setFont(new java.awt.Font("Arial", 0, 14)); // NOI18N
-        jLabel3.setText("User in current chatroom:");
+        jLabel3.setText("Users in current chatroom:");
 
         buttonChangeRoom.setText("Change Room");
         buttonChangeRoom.addActionListener(new java.awt.event.ActionListener() {
