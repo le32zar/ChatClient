@@ -10,6 +10,7 @@ import ChatServer.MessageType;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,6 @@ public class ChatFrame extends javax.swing.JFrame {
     
     public void errorMsg(String text){
         JOptionPane.showMessageDialog(null, text, "Error", JOptionPane.ERROR_MESSAGE);
-
     }
     
     /**
@@ -96,6 +96,7 @@ public class ChatFrame extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         buttonChangeRoom = new javax.swing.JButton();
         buttonSendMessage = new javax.swing.JButton();
+        buttonOpenPrivate = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -150,6 +151,13 @@ public class ChatFrame extends javax.swing.JFrame {
             }
         });
 
+        buttonOpenPrivate.setText("Open Private");
+        buttonOpenPrivate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                buttonOpenPrivateActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -179,7 +187,9 @@ public class ChatFrame extends javax.swing.JFrame {
                                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
                                     .addComponent(jScrollPane2)
                                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                                        .addGap(0, 0, Short.MAX_VALUE)
+                                        .addGap(6, 6, 6)
+                                        .addComponent(buttonOpenPrivate)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                         .addComponent(buttonChangeRoom))))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGap(18, 18, 18)
@@ -199,7 +209,9 @@ public class ChatFrame extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(buttonChangeRoom)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(buttonChangeRoom)
+                            .addComponent(buttonOpenPrivate))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel3)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -248,27 +260,17 @@ public class ChatFrame extends javax.swing.JFrame {
         }
         String roomName= roomList.getSelectedValue();
         Message msgRoom = new Message( MessageType.INTERNAL, clientInstance.ClientName, "server", "REQUEST_CHANGE_ROOM", roomName);
-        try {
-            clientInstance.sendMessage(msgRoom);
-        } catch (IOException ex) {
-            Logger.getLogger(ChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        clientInstance.sendMessage(msgRoom);
     }//GEN-LAST:event_buttonChangeRoomActionPerformed
 
     private void buttonSendMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonSendMessageActionPerformed
         String message = textFieldMessage.getText();
         if(!message.equals("")){
             Message msg = new Message(MessageType.ROOM, clientInstance.ClientName, clientInstance.RoomName, message);
-            try {
-                clientInstance.sendMessage(msg);
-                clientInstance.printMessage(msg);
-                textFieldMessage.setText("");
-            } catch (IOException ex) 
-            {
-                Logger.getLogger(ChatFrame.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            clientInstance.sendMessage(msg);
+            clientInstance.printMessage(msg);
+            textFieldMessage.setText("");
         }
-        // TODO add your handling code here:
     }//GEN-LAST:event_buttonSendMessageActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
@@ -278,6 +280,22 @@ public class ChatFrame extends javax.swing.JFrame {
             Logger.getLogger(ChatFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_formWindowClosing
+
+    private void buttonOpenPrivateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_buttonOpenPrivateActionPerformed
+        ArrayList<String> partnerList = new ArrayList<>();
+        
+        for(String key : clientInstance.RoomMap.keySet()) {            
+            for(String name : clientInstance.RoomMap.get(key)) {
+                if(!name.equals(clientInstance.ClientName)) partnerList.add(name);
+            }
+        }
+        
+        OpenPrivateDialog dialog = new OpenPrivateDialog(this, true, partnerList);
+        dialog.setVisible(true);
+        
+        if(dialog.SelectedPartner.equals("")) return;
+        clientInstance.openPrivate(dialog.SelectedPartner);
+    }//GEN-LAST:event_buttonOpenPrivateActionPerformed
     
     /**
      * @param args the command line arguments
@@ -316,6 +334,7 @@ public class ChatFrame extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton buttonChangeRoom;
+    private javax.swing.JButton buttonOpenPrivate;
     private javax.swing.JButton buttonSendMessage;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

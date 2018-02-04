@@ -16,6 +16,8 @@ public class Client {
     private ObjectOutputStream _out;
     
     public ChatFrame ChatFrame;
+    public Map<String, PrivateFrame> PrivateRooms;
+    
     public String ClientName;
     public boolean IsActive;
     public boolean IsLoggedin;
@@ -30,7 +32,8 @@ public class Client {
         IsActive = true;
         ServerHost = serverHost;
         ServerPort = serverPort;
-        ChatFrame= chatFrame;
+        ChatFrame = chatFrame;
+        PrivateRooms = new HashMap<>();
         RoomMap = new HashMap<>();
         
         try {
@@ -61,7 +64,7 @@ public class Client {
                         printMessage(msg);
                         break;
                     case PRIVATE:
-                        printMessage(msg);
+                        printPrivateMessage(msg);
                         break;
                     default:
                         break;
@@ -76,6 +79,30 @@ public class Client {
     public void printMessage(Message msg){
         String logText = String.format("[%s]%s: %s", ChatFrame.getTime(false), msg.Sender, msg.Text[0]);
         ChatFrame.printChatArea(logText); 
+    }
+    
+    public void printPrivateMessage(Message msg){
+        if(!PrivateRooms.containsKey(msg.Sender)) return;
+        
+        String logText = String.format("[%s]%s: %s", ChatFrame.getTime(false), msg.Sender, msg.Text[0]);
+        PrivateRooms.get(msg.Sender).printChatArea(logText); 
+    }
+    
+    public void openPrivate(String partnerName) {
+        Message msg = new Message(MessageType.INTERNAL, ClientName, partnerName, "OPEN_PRIVATE");
+        sendMessage(msg);
+        
+        PrivateFrame frame = new PrivateFrame(this, partnerName);
+        frame.setVisible(true);
+        PrivateRooms.put(partnerName, frame);
+    }
+    
+    public void closePrivate(String partnerName) {
+        Message msg = new Message(MessageType.INTERNAL, ClientName, partnerName, "CLOSE_PRIVATE");
+        sendMessage(msg);
+        
+        PrivateRooms.get(partnerName).closeExtern();
+        PrivateRooms.remove(partnerName);
     }
     
     private void handleInternalMessage(Message msg) {
@@ -148,6 +175,20 @@ public class Client {
                     Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 break;
+            case "OPEN_PRIVATE":
+                if(PrivateRooms.containsKey(msg.Sender)) return;
+                PrivateFrame frame = new PrivateFrame(this, msg.Sender);
+                frame.setVisible(true);
+                
+                PrivateRooms.put(msg.Sender, frame);
+                
+                break;
+            case "CLOSE_PRIVATE":
+                if(!PrivateRooms.containsKey(msg.Sender)) return;
+                PrivateRooms.get(msg.Sender).closeExtern();
+                PrivateRooms.remove(msg.Sender);
+                
+                break;    
         }
     }
 
@@ -167,9 +208,13 @@ public class Client {
         return map;
     }
     
-    public void sendMessage(Message msg) throws IOException {
-        _out.writeObject(msg);
-        _out.flush();
+    public void sendMessage(Message msg) {
+        try {
+            _out.writeObject(msg);
+            _out.flush();
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
      
     public void close() throws IOException, ClassNotFoundException {
@@ -181,6 +226,10 @@ public class Client {
     
     private void closeInternal() throws IOException {
         IsActive = false;
+        
+        for(String p : PrivateRooms.keySet()) {
+            closePrivate(p);
+        }
         
         _in.close();
         _out.close();
@@ -226,6 +275,4 @@ public class Client {
         }  
         return false;
     }
-
-   
 }
